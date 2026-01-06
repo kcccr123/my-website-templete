@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyCraft - WebAssembly</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+    
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+    
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    /* Loading Overlay */
+    #loading-overlay {
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(4px);
+    }
+    
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: white;
+      font-size: 18px;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+    
+    /* Click to Play Overlay */
+    #play-overlay {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+    }
+    
+    #play-overlay:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    
+    .play-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      color: white;
+      pointer-events: none;
+    }
+    
+    .play-button {
+      width: 64px;
+      height: 64px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .play-button svg {
+      width: 32px;
+      height: 32px;
+      margin-left: 4px;
+      fill: white;
+    }
+    
+    .play-text {
+      font-size: 20px;
+      font-weight: 500;
+    }
+    
+    .play-hint {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Pausing Overlay */
+    #pausing-overlay {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+    }
+    
+    .pausing-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .pausing-text {
+      color: white;
+      font-size: 20px;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+    
+    /* Error Overlay */
+    #error-overlay {
+      background: rgba(127, 29, 29, 0.95);
+      backdrop-filter: blur(4px);
+      padding: 24px;
+    }
+    
+    .error-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .error-message {
+      color: #fecaca;
+      font-size: 14px;
+      text-align: center;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="canvas" tabindex="0"></canvas>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="overlay">
+      <div class="spinner"></div>
+      <div id="loading-status" class="loading-text">Initializing...</div>
+    </div>
+    
+    <!-- Click to Play Overlay -->
+    <div id="play-overlay" class="overlay hidden">
+      <div class="play-content">
+        <div class="play-button">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+        <div id="play-text" class="play-text">Click to Play</div>
+        <div class="play-hint">Press ESC to pause</div>
+      </div>
+    </div>
+    
+    <!-- Pausing Overlay -->
+    <div id="pausing-overlay" class="overlay hidden">
+      <div class="pausing-spinner"></div>
+      <div class="pausing-text">Pausing...</div>
+    </div>
+    
+    <!-- Error Overlay -->
+    <div id="error-overlay" class="overlay hidden">
+      <div class="error-title">Error Loading WebAssembly</div>
+      <div id="error-message" class="error-message"></div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // DOM Elements
+      const canvas = document.getElementById('canvas');
+      const loadingOverlay = document.getElementById('loading-overlay');
+      const loadingStatus = document.getElementById('loading-status');
+      const playOverlay = document.getElementById('play-overlay');
+      const playText = document.getElementById('play-text');
+      const pausingOverlay = document.getElementById('pausing-overlay');
+      const errorOverlay = document.getElementById('error-overlay');
+      const errorMessage = document.getElementById('error-message');
+      
+      // State
+      let isLoading = true;
+      let hasError = false;
+      let isPointerLocked = false;
+      let gameStarted = false;
+      let canRequestLock = true;
+      let lastLockReleaseTime = 0;
+      const LOCK_COOLDOWN = 1000; // ms
+      const MIN_WAIT_TIME = 300; // ms
+      
+      // Notify parent of state changes
+      function notifyParent(type, data = {}) {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type, ...data }, '*');
+        }
+      }
+      
+      // Update UI based on state
+      function updateOverlays() {
+        loadingOverlay.classList.toggle('hidden', !isLoading);
+        errorOverlay.classList.toggle('hidden', !hasError);
+        
+        const showPlay = !isLoading && !hasError && !isPointerLocked && canRequestLock;
+        const showPausing = !isLoading && !hasError && !isPointerLocked && !canRequestLock;
+        
+        playOverlay.classList.toggle('hidden', !showPlay);
+        pausingOverlay.classList.toggle('hidden', !showPausing);
+        
+        if (showPlay) {
+          playText.textContent = gameStarted ? 'Click to Resume' : 'Click to Play';
+        }
+      }
+      
+      // Pointer Lock handling
+      function handlePointerLockChange() {
+        const locked = document.pointerLockElement === canvas;
+        isPointerLocked = locked;
+        
+        if (locked) {
+          gameStarted = true;
+          canvas.focus();
+          notifyParent('pointerlock', { locked: true });
+        } else {
+          lastLockReleaseTime = Date.now();
+          canRequestLock = false;
+          notifyParent('pointerlock', { locked: false });
+          
+          setTimeout(() => {
+            canRequestLock = true;
+            updateOverlays();
+          }, LOCK_COOLDOWN);
+        }
+        
+        updateOverlays();
+      }
+      
+      function handlePointerLockError(e) {
+        console.error('Pointer lock error:', e);
+        lastLockReleaseTime = Date.now();
+        canRequestLock = false;
+        
+        setTimeout(() => {
+          canRequestLock = true;
+          updateOverlays();
+        }, LOCK_COOLDOWN);
+      }
+      
+      async function requestPointerLock() {
+        const timeSinceRelease = Date.now() - lastLockReleaseTime;
+        
+        if (!isLoading && !hasError && timeSinceRelease >= MIN_WAIT_TIME && canRequestLock) {
+          canvas.focus();
+          
+          try {
+            const result = canvas.requestPointerLock();
+            if (result && typeof result.then === 'function') {
+              await result;
+            }
+          } catch (err) {
+            console.error('Pointer lock request failed:', err);
+          }
+        }
+      }
+      
+      // Event Listeners
+      document.addEventListener('pointerlockchange', handlePointerLockChange);
+      document.addEventListener('pointerlockerror', handlePointerLockError);
+      
+      canvas.addEventListener('click', (e) => {
+        e.preventDefault();
+        requestPointerLock();
+      });
+      
+      playOverlay.addEventListener('click', (e) => {
+        e.preventDefault();
+        requestPointerLock();
+      });
+      
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+      
+      // Listen for messages from parent
+      window.addEventListener('message', (e) => {
+        if (e.data.type === 'requestPointerLock') {
+          requestPointerLock();
+        }
+      });
+      
+      // Show error
+      function showError(msg) {
+        hasError = true;
+        errorMessage.textContent = msg;
+        updateOverlays();
+        notifyParent('error', { message: msg });
+      }
+      
+      // Emscripten Module configuration
+      window.Module = {
+        canvas: canvas,
+        preRun: [],
+        postRun: [],
+        print: function(text) {
+          console.log('[WASM]', text);
+        },
+        printErr: function(text) {
+          if (!text.includes("can't fopen") && !text.includes("pointer lock")) {
+            console.error('[WASM Error]', text);
+          }
+        },
+        setStatus: function(text) {
+          if (!text) {
+            isLoading = false;
+            loadingStatus.textContent = 'Running';
+            updateOverlays();
+            notifyParent('loaded');
+          } else if (text.includes('Exception')) {
+            showError(text);
+          } else {
+            loadingStatus.textContent = text;
+          }
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          const status = left 
+            ? 'Loading... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')'
+            : 'Processing...';
+          Module.setStatus(status);
+        },
+        locateFile: function(path, prefix) {
+          // Files are in the same directory as this HTML
+          if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
+            return './' + path;
+          }
+          if (!path.startsWith('http') && !path.startsWith('/')) {
+            return './' + path;
+          }
+          return prefix + path;
+        },
+        onAbort: function(what) {
+          const errorMsg = typeof what === 'string' ? what : 'Application aborted';
+          if (!errorMsg.includes("can't fopen")) {
+            showError(errorMsg);
+          }
+        }
+      };
+      
+      // Load the WASM JavaScript
+      const script = document.createElement('script');
+      script.src = './mycraft.js';
+      script.async = true;
+      
+      script.onerror = function() {
+        showError('Failed to load WebAssembly application');
+      };
+      
+      document.body.appendChild(script);
+      
+      // Notify parent that iframe is ready
+      notifyParent('ready');
+    })();
+  </script>
+</body>
+</html>
