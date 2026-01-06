@@ -16,6 +16,7 @@ const componentMap = {
   'wasm': dynamic(() => import('./components/WasmDisplay')),
   'wasm-iframe': dynamic(() => import('./components/WasmDisplayIFrame')),
   'screenshots': dynamic(() => import('./components/TechStack')),
+  'markdown': dynamic(() => import('./components/MarkdownBlock')),
   'text-section': dynamic(() => import('./components/TechStack')),
 } as const;
 
