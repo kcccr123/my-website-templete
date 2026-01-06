@@ -31,7 +31,7 @@ export default function Navbar({ items = [
         
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
         
-        <div className="relative max-w-7xl mx-auto px-6 py-4">
+        <div className="relative max-w-7xl mx-auto px-6 py-6">
           <ul className="flex items-center justify-center gap-2 md:gap-4">
             {items.map((item) => {
               const isActive = pathname === item.href;
@@ -43,7 +43,7 @@ export default function Navbar({ items = [
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className={`
-                        px-4 py-2 rounded-lg text-center font-medium transition-all duration-200
+                        px-4 py-3 rounded-lg text-center font-medium transition-all duration-200
                         ${isActive 
                           ? 'bg-white/10 text-white shadow-lg' 
                           : 'text-text-secondary hover:text-white hover:bg-white/5'

@@ -28,6 +28,76 @@ body {
   overflow-x: hidden;
 }
 
+/* Global utility classes */
+.glass-card {
+  background: var(--color-glass);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 0.5rem;
+  padding: clamp(1rem, 1.6vw, 1.8rem);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--color-glass-border-hover);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-glass-border);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-glass-border-hover);
+}
+
+
+/* Responsive layout helpers */
+.page-gutters {
+  padding-left: clamp(0.15rem, 0.9vw, 0.6rem);
+  padding-right: clamp(0.3rem, 1.6vw, 1rem);
+}
+
+.page-container {
+  width: 100%;
+  max-width: 128rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-text {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-size: clamp(6.5rem, 22vw, 26rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .hero-text {
+    white-space: normal;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #000000;
