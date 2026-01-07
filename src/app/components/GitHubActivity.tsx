@@ -22,9 +22,15 @@ interface GitHubEvent {
     url: string;
   };
   created_at: string;
+  commitLinks?: Array<{ sha: string; url: string; message?: string }>;
   payload: {
-    commits?: Array<{ message: string }>;
+    commits?: Array<{ message?: string; sha?: string }>;
     action?: string;
+    size?: number;
+    distinct_size?: number;
+    before?: string;
+    head?: string;
+    ref?: string;
   };
 }
 
@@ -45,10 +51,69 @@ export default function GitHubActivity({
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const response = await fetch(`https://api.github.com/users/${username}/events/public?per_page=${eventCount}`);
+        const response = await fetch(
+          `https://api.github.com/users/${username}/events/public?per_page=${eventCount}`,
+          {
+            headers: {
+              Accept: "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+          }
+        );
         if (!response.ok) throw new Error('Failed to fetch GitHub activity');
         const data = await response.json();
-        setEvents(data);
+        const enriched = await Promise.all(
+          (data as GitHubEvent[]).map(async (event) => {
+            if (event.type !== 'PushEvent') {
+              return event;
+            }
+
+            const repoName = event.repo?.name;
+            const head = event.payload.head;
+            if (!repoName || !head) {
+              return event;
+            }
+
+            const [owner, repo] = repoName.split('/');
+            if (!owner || !repo) {
+              return event;
+            }
+
+            try {
+              const commitResponse = await fetch(
+                `https://api.github.com/repos/${owner}/${repo}/commits/${head}`,
+                {
+                  headers: {
+                    Accept: "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                  },
+                }
+              );
+              if (!commitResponse.ok) {
+                throw new Error('Failed to fetch commit');
+              }
+              const commitData = await commitResponse.json();
+              const commitUrl =
+                typeof commitData.html_url === 'string'
+                  ? commitData.html_url
+                  : `https://github.com/${repoName}/commit/${head}`;
+              const commitMessage =
+                typeof commitData.commit?.message === 'string'
+                  ? commitData.commit.message
+                  : undefined;
+              return {
+                ...event,
+                commitLinks: [{ sha: head, url: commitUrl, message: commitMessage }]
+              };
+            } catch {
+              return {
+                ...event,
+                commitLinks: [{ sha: head, url: `https://github.com/${repoName}/commit/${head}` }]
+              };
+            }
+          })
+        );
+        setEvents(enriched);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load activity');
       } finally {
@@ -62,8 +127,9 @@ export default function GitHubActivity({
   const getEventDescription = (event: GitHubEvent) => {
     switch (event.type) {
       case 'PushEvent':
-        const commitCount = event.payload.commits?.length || 0;
-        return `Pushed ${commitCount} commit${commitCount !== 1 ? 's' : ''}`;
+        return event.payload.ref
+          ? `Pushed to ${event.payload.ref.split('/').pop()}`
+          : 'Pushed commits';
       case 'CreateEvent':
         return 'Created repository';
       case 'PullRequestEvent':
@@ -102,11 +168,7 @@ export default function GitHubActivity({
         </div>
       )}
 
-      <div className="space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--color-glass-border)] scrollbar-track-transparent flex-1 min-h-0">
-        {loading && (
-          <div className="text-[var(--color-text-muted)] text-sm">Loading activity...</div>
-        )}
-
+      <div className="relative space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--color-glass-border)] scrollbar-track-transparent flex-1 min-h-0">
         {error && (
           <div className="text-[var(--color-text-muted)] text-sm">{error}</div>
         )}
@@ -133,6 +195,30 @@ export default function GitHubActivity({
                 >
                   {event.repo.name}
                 </a>
+                {event.commitLinks && event.commitLinks.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {event.commitLinks.slice(0, 2).map((commit) => {
+                      const label = commit.message?.split("\n")[0]?.trim() || `Commit ${commit.sha.slice(0, 7)}`;
+                      return (
+                        <a
+                          key={commit.sha}
+                          href={commit.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-300 hover:text-blue-200 transition-colors"
+                          title={commit.message}
+                        >
+                          {label}
+                        </a>
+                      );
+                    })}
+                    {event.commitLinks.length > 2 && (
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        +{event.commitLinks.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
                 {formatDate(event.created_at)}
@@ -140,6 +226,19 @@ export default function GitHubActivity({
             </div>
           </div>
         ))}
+
+        {loading && !error && (
+          <div
+            className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-3 text-sm text-white/80">
+              <div className="h-8 w-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              <span>Loading activity...</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

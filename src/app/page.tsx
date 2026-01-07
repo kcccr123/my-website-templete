@@ -6,13 +6,16 @@ import PageTransition from "./components/PageTransition";
 import TypedText from "./components/TypedText";
 import SocialLinks from "./components/SocialLinks";
 import GitHubContributions from "./components/GitHubContributions";
+import GitHubActivity from "./components/GitHubActivity";
 import SlideIn from "./components/SlideIn";
 import ExpandArrow from "./components/ExpandArrow";
 import AboutMeMarkdown from "./components/AboutMeMarkdown";
 
 export default function Home() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const aboutMeContent = `
+  const aboutBlurb =
+    "I build clean, high-impact web experiences that balance polish with performance. I care about clarity, strong interaction design, and building systems that scale with the project. When I'm not shipping, I'm exploring new tooling, refining my craft, and iterating on the details that make products feel great to use.";
+  const moreAboutContent = `
 I'm Kevin Chen, a developer who likes building clean, expressive interfaces and dependable systems.
 I focus on thoughtful design, strong fundamentals, and shipping polished experiences.
 
@@ -28,37 +31,114 @@ I focus on thoughtful design, strong fundamentals, and shipping polished experie
         <div className="page-container flex flex-col gap-10">
           {/* Top row */}
           <div>
-            <SlideIn direction="top" delay={0.1} className="flex items-start">
+            <SlideIn
+              direction="top"
+              delay={0.1}
+              duration={0.6}
+              maxHeight="100%"
+              maxWidth="100%"
+              minHeight={undefined}
+              className="flex items-start"
+            >
               <TypedText 
                 text="Hi There!🫡" 
                 typingSpeed={80}
                 className="w-full"
                 textClassName="hero-text font-sans"
+                cursorClassName=""
+                showCursor={true}
+                onComplete={undefined}
+              />
+            </SlideIn>
+          </div>
+
+          {/* About blurb */}
+          <div>
+            <SlideIn
+              direction="top"
+              delay={0.2}
+              duration={0.6}
+              maxHeight="100%"
+              maxWidth="100%"
+              minHeight={undefined}
+              className="flex items-start"
+            >
+              <TypedText
+                text={aboutBlurb}
+                typingSpeed={35}
+                className="w-full"
+                textClassName="text-[clamp(1.05rem,2.1vw,1.6rem)] text-[var(--color-text-secondary)] leading-relaxed max-w-[70rem] whitespace-normal"
+                cursorClassName=""
+                showCursor={false}
+                onComplete={undefined}
               />
             </SlideIn>
           </div>
 
           {/* Bottom row */}
           <div>
-            <div className="grid w-full grid-cols-1 md:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] gap-8 items-start">
+            <div className="grid w-full grid-cols-1 md:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] lg:grid-cols-[minmax(320px,440px)_minmax(0,1.2fr)_minmax(260px,360px)] gap-8 items-start">
               {/* Left: Social Links - narrow column */}
-              <SlideIn direction="left" delay={0.3}>
+              <SlideIn
+                direction="left"
+                delay={0.3}
+                duration={0.6}
+                maxHeight="100%"
+                maxWidth="100%"
+                minHeight={undefined}
+                className=""
+              >
                 <SocialLinks 
                   github="https://github.com/kcccr123"
                   linkedin="https://www.linkedin.com/in/kevin-chen-095702262/"
                   email="kevinz.chen@mail.utoronto.ca"
                   title="Links"
+                  maxHeight="400px"
+                  maxWidth="100%"
                   minHeight="260px"
+                  className=""
                 />
               </SlideIn>
 
               {/* Right: GitHub Contributions - wider column */}
-              <SlideIn direction="right" delay={0.5}>
+              <SlideIn
+                direction="right"
+                delay={0.5}
+                duration={0.6}
+                maxHeight="100%"
+                maxWidth="100%"
+                minHeight={undefined}
+                className=""
+              >
                 <GitHubContributions 
                   username="kcccr123" 
-                  title="GitHub Activity Tracker"
-                  minHeight="320px"
+                  title="GitHub Contributions"
+                  weeks={52}
+                  maxHeight="480px"
+                  minHeight="380px"
                   maxWidth="100%"
+                  className=""
+                />
+              </SlideIn>
+
+              <SlideIn
+                direction="right"
+                delay={0.7}
+                duration={0.6}
+                maxHeight="100%"
+                maxWidth="100%"
+                minHeight={undefined}
+                className=""
+              >
+                <GitHubActivity
+                  username="kcccr123"
+                  title="GitHub Activity"
+                  eventCount={10}
+                  maxHeight="400px"
+                  maxWidth="360px"
+                  minHeight="320px"
+                  className=""
+                  showIcon={true}
                 />
               </SlideIn>
             </div>
@@ -69,12 +149,13 @@ I focus on thoughtful design, strong fundamentals, and shipping polished experie
               type="button"
               onClick={() => setIsAboutOpen((prev) => !prev)}
               aria-expanded={isAboutOpen}
-              aria-controls="about-me-section"
+              aria-controls="more-about-me-section"
               className="group inline-flex items-center gap-3 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass)] px-6 py-3 text-[clamp(0.95rem,1.4vw,1.1rem)] font-medium text-white/90 transition-all duration-300 hover:border-[var(--color-glass-border-hover)] hover:text-white"
             >
-              <span>{isAboutOpen ? "Hide About Me" : "About Me"}</span>
+              <span>{isAboutOpen ? "Hide More About Me" : "More About Me"}</span>
               <ExpandArrow
                 isOpen={isAboutOpen}
+                size={20}
                 className="text-white/80 group-hover:text-white transition-colors duration-300"
               />
             </button>
@@ -82,7 +163,7 @@ I focus on thoughtful design, strong fundamentals, and shipping polished experie
             <AnimatePresence initial={false}>
               {isAboutOpen && (
                 <motion.div
-                  id="about-me-section"
+                  id="more-about-me-section"
                   role="region"
                   initial={{ height: 0, opacity: 0, y: -8 }}
                   animate={{ height: "auto", opacity: 1, y: 0 }}
@@ -90,7 +171,12 @@ I focus on thoughtful design, strong fundamentals, and shipping polished experie
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="w-full overflow-hidden"
                 >
-                  <AboutMeMarkdown title="About Me" content={aboutMeContent} className="w-full" />
+                  <AboutMeMarkdown
+                    title="More About Me"
+                    content={moreAboutContent}
+                    filePath={undefined}
+                    className="w-full"
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

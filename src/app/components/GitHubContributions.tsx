@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { GitHubCalendar } from 'react-github-calendar';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityCalendar } from 'react-activity-calendar';
 
 interface Activity {
   date: string;
   count: number;
   level: 0 | 1 | 2 | 3 | 4;
+}
+
+interface ApiResponse {
+  contributions: Activity[];
 }
 
 interface GitHubContributionsProps {
@@ -34,11 +38,14 @@ export default function GitHubContributions({
     blockMargin: 4,
     fontSize: 14
   }));
+  const [rawContributions, setRawContributions] = useState<Activity[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const sizingForWidth = (width: number) => {
-    const blockSize = Math.max(10, Math.min(18, Math.round(width / 55)));
-    const blockMargin = Math.max(2, Math.min(5, Math.round(blockSize / 3)));
-    const fontSize = Math.max(12, Math.min(16, Math.round(blockSize)));
+    const blockSize = Math.max(12, Math.min(20, Math.round(width / 50)));
+    const blockMargin = Math.max(3, Math.min(6, Math.round(blockSize / 3)));
+    const fontSize = Math.max(12, Math.min(16, Math.round(blockSize * 0.85)));
     return { blockSize, blockMargin, fontSize };
   };
 
@@ -47,6 +54,49 @@ export default function GitHubContributions({
     const cutoff = new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
     return contributions.filter((activity: Activity) => new Date(activity.date) >= cutoff);
   };
+
+  const filteredContributions = useMemo(() => {
+    if (!rawContributions) {
+      return null;
+    }
+    return selectLastWeeks(rawContributions);
+  }, [rawContributions, weeks]);
+
+  useEffect(() => {
+    let isActive = true;
+    setIsLoading(true);
+    setError(null);
+
+    fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`)
+      .then(async (response) => {
+        const data = (await response.json()) as ApiResponse & { error?: string };
+        if (!response.ok) {
+          throw new Error(data.error || response.statusText || 'Unable to load GitHub activity.');
+        }
+        return data;
+      })
+      .then((data) => {
+        if (!isActive) {
+          return;
+        }
+        setRawContributions(data.contributions || []);
+      })
+      .catch((err: unknown) => {
+        if (!isActive) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Unable to load GitHub activity.');
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [username]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -76,10 +126,12 @@ export default function GitHubContributions({
     return () => observer.disconnect();
   }, []);
 
+  const calendarLoading = isLoading || (!filteredContributions && !error);
+
   return (
     <div className={`glass-card ${className}`} style={{ maxHeight, maxWidth, minHeight, display: 'flex', flexDirection: 'column' }}>
       <h2 className="text-[clamp(1.05rem,1.6vw,1.4rem)] font-semibold mb-4 flex-shrink-0">{title}</h2>
-      <div ref={containerRef} className="flex items-center justify-center w-full overflow-x-auto flex-1 min-h-0">
+      <div ref={containerRef} className="relative flex items-center justify-center w-full overflow-x-auto flex-1 min-h-0">
         <style jsx>{`
           div :global(svg) {
             max-width: 100%;
@@ -95,20 +147,37 @@ export default function GitHubContributions({
             align-items: center;
           }
         `}</style>
-        <GitHubCalendar
-          username={username}
-          transformData={selectLastWeeks}
-          labels={{
-            totalCount: `{{count}} contributions in the last ${weeks} weeks`
-          }}
-          colorScheme="dark"
-          blockSize={calendarSizing.blockSize}
-          blockMargin={calendarSizing.blockMargin}
-          fontSize={calendarSizing.fontSize}
-          theme={{
-            dark: ['rgba(255, 255, 255, 0.1)', '#0e4429', '#006d32', '#26a641', '#39d353'],
-          }}
-        />
+        {error ? (
+          <div className="flex w-full items-center justify-center text-sm text-red-400">
+            Unable to load GitHub activity.
+          </div>
+        ) : (
+          <ActivityCalendar
+            data={filteredContributions ?? []}
+            labels={{
+              totalCount: `{{count}} contributions in the last ${weeks} weeks`
+            }}
+            colorScheme="dark"
+            blockSize={calendarSizing.blockSize}
+            blockMargin={calendarSizing.blockMargin}
+            fontSize={calendarSizing.fontSize}
+            loading={calendarLoading}
+            theme={{
+              light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+              dark: ['rgba(255, 255, 255, 0.1)', '#0e4429', '#006d32', '#26a641', '#39d353'],
+            }}
+          />
+        )}
+        {calendarLoading && (
+          <div
+            className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="h-9 w-9 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            <span className="sr-only">Loading GitHub activity</span>
+          </div>
+        )}
       </div>
     </div>
   );
