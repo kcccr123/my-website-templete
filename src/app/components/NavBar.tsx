@@ -16,6 +16,7 @@ interface NavbarProps {
 export default function Navbar({ items = [
   { label: 'Home', href: '/' },
   { label: 'Projects', href: '/projects' },
+  { label: 'Experiences', href: '/experiences' },
 ] }: NavbarProps) {
   const pathname = usePathname();
 
