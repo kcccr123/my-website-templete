@@ -37,7 +37,7 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
   return (
     <PageTransition>
       <div className="min-h-screen bg-black font-sans pt-36 pb-20">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-5xl mx-auto px-6">
           <div className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">{project.title}</h1>
             

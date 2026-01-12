@@ -17,6 +17,11 @@ interface ProjectCardProps {
  * @param {number} props.index - The index of the card for animation delay.
  */
 export default function ProjectCard({ project, index }: ProjectCardProps) {
+  const techStack = project.components?.find((component) => component.type === "tech-stack");
+  const technologies = Array.isArray(techStack?.props?.technologies)
+    ? (techStack?.props?.technologies as string[])
+    : [];
+
   return (
     <Link href={`/projects/${project.slug}`}>
       <motion.div
@@ -47,6 +52,18 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         <div className="p-6">
           <h3 className="text-xl font-bold mb-2">{project.title}</h3>
           <p className="text-text-muted text-sm leading-relaxed">{project.description}</p>
+          {technologies.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {technologies.map((tech) => (
+                <span
+                  key={tech}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.7rem] font-medium text-text-muted transition-colors duration-200 group-hover:text-text-secondary"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </Link>

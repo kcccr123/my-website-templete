@@ -14,11 +14,11 @@ import AboutMeMarkdown from "./components/AboutMeMarkdown";
 export default function Home() {  
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const aboutBlurb =
-    "Hi, I’m Kevin. I focus on backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game dev, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.";
+    "Hi, I’m Kevin. I focus on backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game dev, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.al";
   const moreAboutContent = `
-I'm Kevin
+I'm a Computer Science Student currently studying at the University of Toronto, pursuing Computer Science and Statistics
 
-- WIP
+My favorite sports are Badminton and Skiing.
 `;
 
   return (
