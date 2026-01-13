@@ -29,8 +29,8 @@ export default function ProjectCard({ project, index }: ProjectCardProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.1, ease: "easeInOut" }}
         className="group relative overflow-hidden rounded-lg bg-glass backdrop-blur-sm border border-glass-border hover:border-glass-border-hover transition-all duration-300"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.02, transition: { duration: 0.15, ease: "easeOut" } }}
+        whileTap={{ scale: 0.98, transition: { duration: 0.08, ease: "easeOut" } }}
       >
         <div className="relative h-48 w-full overflow-hidden">
           {project.image ? (

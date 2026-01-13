@@ -15,7 +15,7 @@ export default function Home() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const moreAboutRef = useRef<HTMLDivElement | null>(null);
   const aboutBlurb =
-    "Hi, I’m Kevin. I focus on backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game development, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.";
+    "Hi, I’m Kevin. My focus is in backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game development, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.";
 const moreAboutContent = ` 
 I'm a **Computer Science** student currently studying at the **University of Toronto**, pursuing Computer Science and Statistics, and expecting to graduate in December 2026. Originally from **British Columbia**, I became interested in software engineering in high school.
 

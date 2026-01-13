@@ -175,7 +175,7 @@ I learned how to make grading feel fair and explainable by turning a visual diag
     slug: "ue-reinforcement-learning",
     title: "UE Reinforcement Learning",
     description: "A UE5 plugin and Python toolkit for training and running reinforcement learning agents inside Unreal projects.",
-    image: "",
+    image: "/ue-reinforcement/reinforcement.png",
     links: [
       {
         label: "View on GitHub",
@@ -776,7 +776,7 @@ I learned how to keep scraped data fresh, how Kubernetes routing and scaling wor
     slug: "receipt-scanner",
     title: "Receipt Scanner Mobile App",
     description: "A mobile app that lets users quickly store receipts with a photo and tracks spending for better budgeting.",
-    image: "",
+    image: "/reciept-scanner/pipeline/non greyscale non fix angle.jpg",
     links: [
       {
         label: "View App Repo",
@@ -788,6 +788,14 @@ I learned how to keep scraped data fresh, how Kubernetes routing and scaling wor
       }
     ],
     components: [
+      {
+        type: 'image',
+        props: {
+          src: '/reciept-scanner/pipeline/non greyscale non fix angle.jpg',
+          alt: 'Receipt scan before grayscale and angle correction',
+          caption: 'Raw pipeline frame before grayscale conversion and angle correction.'
+        }
+      },
       {
         type: 'tech-stack',
         props: {
@@ -822,10 +830,21 @@ I wanted a faster way to capture receipts and track spending while learning how 
 
 ## Interesting Technical Points
 
+### Inference Pipeline
+
 - In-house pipeline with YOLOv8 detection, RCNN OCR, and BART cleanup
 - Image preprocessing and augmentation to stabilize receipt text extraction
-- Deployed inference on GKE with a mobile client sending images to the server
 - Alternate GPT-4o path for comparison and faster iteration
+
+### Cloud Deployment
+
+- Deployed inference on GKE with a mobile client sending images to the server
+- Containerized services with Docker and Gunicorn for scalable processing
+
+### App Features
+
+- Receipt grouping and tagging for cleaner expense organization
+- Fast capture flow with camera and gallery upload support
 
 ---
 
