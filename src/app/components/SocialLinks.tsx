@@ -52,7 +52,7 @@ export default function SocialLinks({
   return (
     <div className={`glass-card ${className}`} style={{ maxHeight, maxWidth, minHeight, display: 'flex', flexDirection: 'column' }}>
       {title && <h2 className="text-[clamp(1.05rem,1.6vw,1.4rem)] font-semibold mb-4 flex-shrink-0">{title}</h2>}
-      <div className="flex flex-col gap-[clamp(0.6rem,1.2vw,0.9rem)] overflow-y-auto flex-1 min-h-0">
+      <div className="flex flex-col gap-[clamp(0.6rem,1.2vw,0.9rem)] overflow-y-auto flex-1 min-h-0 pt-px">
         {github && (
           <a
             href={github}
