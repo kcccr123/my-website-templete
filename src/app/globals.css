@@ -20,13 +20,13 @@
 }
 
 html {
+  overflow-y: auto;
   overflow-x: hidden;
-  overflow-y: hidden;
 }
 
 body {
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 /* Global utility classes */
@@ -87,7 +87,7 @@ body {
   display: block;
   width: 100%;
   max-width: 100%;
-  font-size: clamp(6.5rem, 22vw, 26rem);
+  font-size: clamp(6.3rem, 18.5vw, 21.5rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
   white-space: nowrap;
