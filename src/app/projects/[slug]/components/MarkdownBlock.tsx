@@ -166,6 +166,13 @@ export default function MarkdownBlock({
           pre: ({ node, ...props }) => (
             <pre className="bg-black/40 rounded-lg overflow-hidden my-4" {...props} />
           ),
+          img: ({ node, ...props }) => (
+            <img
+              className="w-full max-w-xl rounded-lg border border-glass-border my-4 mx-auto"
+              loading="lazy"
+              {...props}
+            />
+          ),
           hr: ({ node, ...props }) => (
             <hr className="border-glass-border my-6" {...props} />
           ),
