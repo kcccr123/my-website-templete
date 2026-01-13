@@ -42,7 +42,12 @@ export default function Projects() {
     <PageTransition>
       <div className="min-h-screen bg-black font-sans pt-36 pb-20">
         <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-4xl md:text-5xl font-bold mb-12">Projects</h1>
+          <div className="mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold">Projects</h1>
+            <p className="mt-3 text-[clamp(1rem,1.6vw,1.2rem)] text-[var(--color-text-secondary)]">
+              Showcasing projects and stuff I've built.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projectColumns.map((column, columnIndex) => (
               <div key={`project-column-${columnIndex}`} className="flex flex-col gap-6">

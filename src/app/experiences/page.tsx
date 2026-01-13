@@ -12,7 +12,7 @@ export default function ExperiencesPage() {
           <div className="mb-12">
             <h1 className="text-[clamp(2.2rem,5vw,3.5rem)] font-bold">Experiences</h1>
             <p className="mt-3 text-[clamp(1rem,1.6vw,1.2rem)] text-[var(--color-text-secondary)]">
-              A timeline of roles, projects, and milestones.
+              A timeline of roles and milestones.
             </p>
           </div>
 

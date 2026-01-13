@@ -3,10 +3,9 @@
 import { notFound } from "next/navigation";
 import PageTransition from "../../components/PageTransition";
 import { projects, ComponentConfig } from "../data/projects";
-import { FaGithub } from "react-icons/fa";
-import { SiDevpost } from "react-icons/si";
 import { use } from "react";
 import dynamic from "next/dynamic";
+import ProjectLinks from "./components/ProjectLinks";
 
 const componentMap = {
   'tech-stack': dynamic(() => import('./components/TechStack')),
@@ -41,31 +40,7 @@ export default function ProjectPage({ params }: { params: Promise<{ slug: string
           <div className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">{project.title}</h1>
             
-            <div className="flex flex-wrap gap-4 mb-6">
-              {project.githubUrl && (
-                <a
-                  href={project.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition-colors duration-200"
-                >
-                  <FaGithub className="text-2xl" />
-                  <span className="text-sm">View on GitHub</span>
-                </a>
-              )}
-              
-              {project.link && project.link.includes('devpost.com') && (
-                <a
-                  href={project.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition-colors duration-200"
-                >
-                  <SiDevpost className="text-2xl" />
-                  <span className="text-sm">View on Devpost</span>
-                </a>
-              )}
-            </div>
+            <ProjectLinks links={project.links} />
             
             <div className="p-6 rounded-lg bg-glass backdrop-blur-sm border border-glass-border">
               <p className="text-lg text-text-secondary leading-relaxed">

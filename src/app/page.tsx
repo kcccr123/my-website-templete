@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import PageTransition from "./components/PageTransition";
 import TypedText from "./components/TypedText";
@@ -13,13 +13,82 @@ import AboutMeMarkdown from "./components/AboutMeMarkdown";
 
 export default function Home() {  
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const moreAboutRef = useRef<HTMLDivElement | null>(null);
   const aboutBlurb =
-    "Hi, I’m Kevin. I focus on backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game dev, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.al";
-  const moreAboutContent = `
-I'm a Computer Science Student currently studying at the University of Toronto, pursuing Computer Science and Statistics
+    "Hi, I’m Kevin. I focus on backend engineering, but I enjoy working across the stack. I’ve explored everything from web and frontend to ML, game development, and distributed systems out of curiosity, all in the process of becoming a more adaptable engineer.";
+const moreAboutContent = ` 
+I'm a **Computer Science** student currently studying at the **University of Toronto**, pursuing Computer Science and Statistics, and expecting to graduate in December 2026. Originally from **British Columbia**, I became interested in software engineering in high school.
 
-My favorite sports are Badminton and Skiing.
+## Career In Software
+
+I’m currently studying **Computer Science and Statistics** at the **University of Toronto**, and I’m planning to graduate in **December 2026**. I grew up in **British Columbia**, and I first got into software engineering in high school through a mix of curiosity, side projects, and wanting to build things that actually worked.
+
+Right now, I’m most focused on **backend engineering and distributed systems**. I enjoy problems where reliability matters, where performance has real constraints, and where systems need to hold up under real-world load. I’m moving my career in this direction as I look to find my niche in industry.
+
+At the same time, I genuinely enjoy learning across all areas of software engineering. I’ve explored **ML and AI**, **full stack web development**, and **game development**, and I try to carry those lessons back into how I design backend systems. **(Check out my projects page! It’s pretty diverse!)** Exploring different areas has made me more adaptable as an engineer, and it helps me understand how backend code fits into the bigger picture, from product and UX all the way to data, infrastructure, and deployment.
+
+I specifically want to continue improving at **game dev** simply because I enjoy it and the kind of systems-level thinking it encourages. It’s a fun hobby, and I want to see what I can build.
+
+## A little bit more about me...
+
+### Sports
+
+- **Badminton:** I’ve been playing since high school. I haven’t played in a while, but it’s still one of my favorite sports, and I enjoy the occasional session with friends.
+- **Skiing:** I try to go a few times a year. Growing up in **BC** makes it hard not to, since places like **Whistler**, **Grouse**, and **Cypress** are so close. My dream ski trip is the **Alps during Christmas**.
+
+### Hobbies
+
+- **Online games:** Usually whatever my friends are into at the moment.
+- **Game development:** As I mentioned earlier, I want to get better at building games. I’ve had a lot of moments where I think, “I really want to play a game like this,” so if no one makes them, I’m hoping to make them myself.
+
+### Other stuff
+
+- **Christmas is my favorite holiday, and winter is my favorite season:** I get really festive.
 `;
+
+  useEffect(() => {
+    if (!isAboutOpen) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const target = moreAboutRef.current;
+      if (!target) {
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const targetBottom = rect.bottom + scrollTop;
+      const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
+      const extraOffset = 120;
+      const nextScrollTop = Math.min(
+        targetBottom - window.innerHeight + extraOffset,
+        maxScrollTop
+      );
+
+      const startScrollTop = window.scrollY || document.documentElement.scrollTop;
+      const delta = Math.max(nextScrollTop, 0) - startScrollTop;
+      const durationMs = 200;
+      const startTime = window.performance.now();
+
+      const animateScroll = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        window.scrollTo(0, startScrollTop + delta * eased);
+
+        if (progress < 1) {
+          window.requestAnimationFrame(animateScroll);
+        }
+      };
+
+      window.requestAnimationFrame(animateScroll);
+    }, 400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isAboutOpen]);
 
   return (
     <PageTransition>
@@ -156,6 +225,7 @@ My favorite sports are Badminton and Skiing.
                 <motion.div
                   id="more-about-me-section"
                   role="region"
+                  ref={moreAboutRef}
                   initial={{ height: 0, opacity: 0, y: -8 }}
                   animate={{ height: "auto", opacity: 1, y: 0 }}
                   exit={{ height: 0, opacity: 0, y: -8 }}

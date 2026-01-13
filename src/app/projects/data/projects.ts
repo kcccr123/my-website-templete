@@ -16,14 +16,18 @@ export interface ComponentConfig {
   props?: Record<string, any>;
 }
 
+export interface ProjectLink {
+  label: string;
+  url: string;
+}
+
 export interface Project {
   id: number;
   slug: string;
   title: string;
   description: string;
   image: string;
-  githubUrl?: string;
-  link?: string;
+  links?: ProjectLink[];
   components?: ComponentConfig[];
 }
 
@@ -34,7 +38,12 @@ export const projects: Project[] = [
     title: "Personal Website Template",
     description: "A reusable portfolio website template with data-driven projects and experiences that I actively use myself, built so anyone can clone it and update content with modular components.",
     image: "",
-    githubUrl: "https://github.com/kcccr123/website",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/website"
+      }
+    ],
     components: [
       {
         type: 'tech-stack',
@@ -98,7 +107,12 @@ I learned how to keep content and layout separate in a Next.js app and how a mod
     title: "MemoryLab",
     description: "A drag-and-drop web app for teaching Python memory models with guided practice, free-form testing, and automatic grading.",
     image: "",
-    githubUrl: "https://github.com/jcal13/memory-model-editor",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/jcal13/memory-model-editor"
+      }
+    ],
     components: [
       {
         type: 'tech-stack',
@@ -162,7 +176,12 @@ I learned how to make grading feel fair and explainable by turning a visual diag
     title: "UE Reinforcement Learning",
     description: "A UE5 plugin and Python toolkit for training and running reinforcement learning agents inside Unreal projects.",
     image: "",
-    githubUrl: "https://github.com/kcccr123/ue-reinforcement-learning",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/ue-reinforcement-learning"
+      }
+    ],
     components: [
       {
         type: 'demo-link',
@@ -220,7 +239,12 @@ I learned how to design a clean UE plugin API, keep a Python training loop synch
     title: "MyCraft",
     description: "A 3D voxel-based game engine built from scratch with C++ and OpenGL, compiled to WebAssembly for browser-based gameplay. Features procedural terrain generation, dynamic lighting, basic physics, and basic mechanics such as breaking and placing blocks.",
     image: "/mycraft/Mycraft.png",
-    githubUrl: "https://github.com/kcccr123/myCraft",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/myCraft"
+      }
+    ],
     components: [
       {
         type: 'wasm-iframe',
@@ -685,8 +709,12 @@ I learned how chunking and face culling reduce draw calls, how to make collision
     title: "Figure Aggregator",
     description: "A Shopify-style online store for toys and models with automated data aggregation.",
     image: "/figure-aggregator/figurecenter.png",
-    link: "https://figure-center.netlify.app/",
-    githubUrl: "https://github.com/kcccr123/figure-aggregator",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/figure-aggregator"
+      }
+    ],
     components: [
       {
         type: 'demo-link',
@@ -749,7 +777,16 @@ I learned how to keep scraped data fresh, how Kubernetes routing and scaling wor
     title: "Receipt Scanner Mobile App",
     description: "A mobile app that lets users quickly store receipts with a photo and tracks spending for better budgeting.",
     image: "",
-    githubUrl: "https://github.com/kcccr123/receipt-scanner",
+    links: [
+      {
+        label: "View App Repo",
+        url: "https://github.com/kcccr123/receipt-scanner"
+      },
+      {
+        label: "View Backend Repo",
+        url: "https://github.com/kcccr123/receipt-scanner-backend"
+      }
+    ],
     components: [
       {
         type: 'tech-stack',
@@ -806,8 +843,16 @@ I learned how data quality and preprocessing drive model accuracy, how to coordi
     title: "Stud.io",
     description: "An intelligent flashcard generation app that uses AI and reinforcement learning to create personalized study materials from lecture notes, adapting to each student's learning needs.",
     image: "/stud.io/hackathon thing.png",
-    link: "https://devpost.com/software/stud-io",
-    githubUrl: "https://github.com/kcccr123/stud-io-nsbehacks-2025",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/stud-io-nsbehacks-2025"
+      },
+      {
+        label: "View on Devpost",
+        url: "https://devpost.com/software/stud-io"
+      }
+    ],
     components: [
       {
         type: 'demo-link',
@@ -872,7 +917,12 @@ I learned how to connect reinforcement learning signals to a user-facing loop, h
     title: "UE Flight Tracker",
     description: "An Unreal Engine app that visualizes active commercial flights on a world-scale map with live flight data and interactive camera controls.",
     image: "/ue-flightsim/ue-flightsim-image-projectcard.png",
-    githubUrl: "https://github.com/kcccr123/ue-flight-tracker",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/ue-flight-tracker"
+      }
+    ],
     components: [
       {
         type: 'demo-link',
@@ -941,7 +991,12 @@ I learned how to synchronize live data with a real-time rendering pipeline and h
     title: "Cat Detector",
     description: "A personal learning project exploring image classification with scikit-learn SVMs and a simple GUI for cat detection.",
     image: "/cat-detector/cat card.jpg",
-    githubUrl: "https://github.com/kcccr123/cat-detector",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/cat-detector"
+      }
+    ],
     components: [
       {
         type: 'image',
@@ -998,7 +1053,12 @@ I learned how preprocessing affects classifier performance and how to structure 
     title: "2D Collision Simulation",
     description: "A high school physics project that simulates 2D collisions between two point masses using conservation of momentum.",
     image: "/2dcollision/day1.png",
-    githubUrl: "https://github.com/kcccr123/2d-collision-simulation",
+    links: [
+      {
+        label: "View on GitHub",
+        url: "https://github.com/kcccr123/2d-collision-simulation"
+      }
+    ],
     components: [
       {
         type: 'demo-link',
