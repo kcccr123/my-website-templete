@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO
 <br />
 <div align="center">
-  <a href="https://github.com/kcccr123/website">
+  <a href="https://github.com/kcccr123/my-website-templete">
     <img src="public/globe.svg" alt="Logo" width="80" height="80">
   </a>
 </div>

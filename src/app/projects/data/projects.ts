@@ -41,7 +41,7 @@ export const projects: Project[] = [
     links: [
       {
         label: "View on GitHub",
-        url: "https://github.com/kcccr123/website"
+        url: "https://github.com/kcccr123/my-website-templete"
       }
     ],
     components: [
