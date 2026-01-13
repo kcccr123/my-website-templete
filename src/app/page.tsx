@@ -128,7 +128,7 @@ I specifically want to continue improving at **game dev** simply because I enjoy
             >
               <TypedText
                 text={aboutBlurb}
-                typingSpeed={30}
+                typingSpeed={19}
                 className="w-full"
                 textClassName="text-[clamp(1.05rem,2.1vw,1.6rem)] text-[var(--color-text-secondary)] leading-relaxed max-w-[70rem] whitespace-normal"
                 cursorClassName=""
