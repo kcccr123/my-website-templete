@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { ExperienceItem } from "../data/experiences";
 import TimelineCard from "./timeline/TimelineCard";
 import TimelineSegment from "./timeline/TimelineSegment";
@@ -60,6 +60,9 @@ const monthDiff = (start: Date, end: Date) => {
 
 export default function Timeline({ items, className = "" }: TimelineProps) {
   const [detailsHeights, setDetailsHeights] = useState<Record<string, number>>({});
+  const [zoomCompensation, setZoomCompensation] = useState(1);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+  const baseDprRef = useRef<number | null>(null);
   const handleDetailsHeight = useCallback((id: string, height: number) => {
     setDetailsHeights((prev) => {
       const nextHeight = Math.ceil(height);
@@ -69,6 +72,47 @@ export default function Timeline({ items, className = "" }: TimelineProps) {
       }
       return { ...prev, [id]: nextHeight };
     });
+  }, []);
+
+  useLayoutEffect(() => {
+    const element = timelineRef.current;
+    if (!element || typeof window === "undefined") {
+      return;
+    }
+
+    const updateScale = () => {
+      if (!baseDprRef.current) {
+        baseDprRef.current = window.devicePixelRatio || 1;
+      }
+
+      const visualScale = window.visualViewport?.scale ?? 1;
+      const dprScale = (window.devicePixelRatio || 1) / baseDprRef.current;
+      const outerScale =
+        window.outerWidth && window.innerWidth ? window.outerWidth / window.innerWidth : 1;
+      const zoomScale = Math.max(visualScale, dprScale, outerScale, 1);
+      const nextScale = 1 / zoomScale;
+
+      setZoomCompensation((prev) => (Math.abs(prev - nextScale) > 0.01 ? nextScale : prev));
+    };
+
+    updateScale();
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => updateScale());
+      observer.observe(element);
+    }
+
+    const intervalId = window.setInterval(updateScale, 250);
+    window.addEventListener("resize", updateScale);
+    window.visualViewport?.addEventListener("resize", updateScale);
+
+    return () => {
+      observer?.disconnect();
+      window.clearInterval(intervalId);
+      window.removeEventListener("resize", updateScale);
+      window.visualViewport?.removeEventListener("resize", updateScale);
+    };
   }, []);
 
   const maxDetailsHeight = Math.max(0, ...Object.values(detailsHeights));
@@ -279,24 +323,45 @@ export default function Timeline({ items, className = "" }: TimelineProps) {
     }
   });
 
+  const scaledCursorTop = Math.round(cursorTop * zoomCompensation);
+  const scaledTotalHeight = Math.round(totalHeight * zoomCompensation);
+  const scaledExtraBottomPadding = Math.round(extraBottomPadding * zoomCompensation);
+
   return (
-    <div className={`relative ${className}`}>
-      <div className="relative md:hidden" style={{ height: `${cursorTop}px` }}>
-        <div className="absolute left-4 top-0 h-full w-px bg-[var(--color-glass-border)]" />
-        {rows.map((row) => (
-          <TimelineSegment
-            key={row.item.id}
-            row={row}
-            dotOffset={dotOffset}
-            dotSize={dotSize}
-            onDetailsHeight={handleDetailsHeight}
-          />
-        ))}
+    <div ref={timelineRef} className={`relative ${className}`}>
+      <div className="relative md:hidden" style={{ height: `${scaledCursorTop}px` }}>
+        <div
+          className="relative"
+          style={{
+            height: `${cursorTop}px`,
+            transform: `scale(${zoomCompensation})`,
+            transformOrigin: "top left"
+          }}
+        >
+          <div className="absolute left-4 top-0 h-full w-px bg-[var(--color-glass-border)]" />
+          {rows.map((row) => (
+            <TimelineSegment
+              key={row.item.id}
+              row={row}
+              dotOffset={dotOffset}
+              dotSize={dotSize}
+              onDetailsHeight={handleDetailsHeight}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="relative hidden md:block" style={{ height: `${totalHeight}px` }}>
-        <div className="grid h-full grid-cols-[1fr_auto_1fr] gap-12">
-          <div className="relative">
+      <div className="relative hidden md:block" style={{ height: `${scaledTotalHeight}px` }}>
+        <div
+          className="relative"
+          style={{
+            height: `${totalHeight}px`,
+            transform: `scale(${zoomCompensation})`,
+            transformOrigin: "top center"
+          }}
+        >
+          <div className="grid h-full grid-cols-[1fr_auto_1fr] gap-12">
+            <div className="relative">
             {leftItems.map((trackItem) => {
               const { item } = trackItem;
               const period = item.end ? `${item.start} - ${item.end}` : `${item.start} - Present`;
@@ -426,10 +491,11 @@ export default function Timeline({ items, className = "" }: TimelineProps) {
           </div>
         </div>
       </div>
+    </div>
 
-      {extraBottomPadding > 0 && (
-        <div aria-hidden="true" style={{ height: `${extraBottomPadding}px` }} />
-      )}
+    {scaledExtraBottomPadding > 0 && (
+      <div aria-hidden="true" style={{ height: `${scaledExtraBottomPadding}px` }} />
+    )}
     </div>
   );
 }
