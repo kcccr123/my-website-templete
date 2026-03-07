@@ -581,6 +581,10 @@ I learned how chunking and face culling reduce draw calls, how to make collision
       {
         label: "View on GitHub",
         url: "https://github.com/jcal13/memory-model-editor"
+      },
+      {
+        label: "Visit MemoryLab",
+        url: "https://memorylab.teach.cs.toronto.edu/"
       }
     ],
     components: [
