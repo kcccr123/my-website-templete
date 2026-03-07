@@ -13,7 +13,16 @@ interface TypedTextProps {
   onComplete?: () => void;
 }
 
-export default function TypedText({ 
+const segmentText = (text: string) => {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    return Array.from(segmenter.segment(text), ({ segment }) => segment);
+  }
+
+  return Array.from(text);
+};
+
+function TypedTextContent({ 
   text, 
   typingSpeed = 80, 
   className = '',
@@ -22,25 +31,33 @@ export default function TypedText({
   showCursor = true,
   onComplete
 }: TypedTextProps) {
-  const [displayedText, setDisplayedText] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
+  const segments = segmentText(text);
+  const [visibleSegments, setVisibleSegments] = useState(0);
+  const displayedText = segments.slice(0, visibleSegments).join('');
+  const isComplete = visibleSegments >= segments.length;
 
   useEffect(() => {
-    let currentIndex = 0;
-    
-    const typingInterval = setInterval(() => {
-      if (currentIndex < text.length) {
-        setDisplayedText(text.slice(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        clearInterval(typingInterval);
-        setIsComplete(true);
-        onComplete?.();
-      }
+    if (segments.length === 0) {
+      onComplete?.();
+      return;
+    }
+
+    const typingInterval = window.setInterval(() => {
+      setVisibleSegments((current) => {
+        const next = current + 1;
+
+        if (next >= segments.length) {
+          window.clearInterval(typingInterval);
+          onComplete?.();
+          return segments.length;
+        }
+
+        return next;
+      });
     }, typingSpeed);
 
-    return () => clearInterval(typingInterval);
-  }, [text, typingSpeed, onComplete]);
+    return () => window.clearInterval(typingInterval);
+  }, [segments.length, typingSpeed, onComplete]);
 
   return (
     <div className={className}>
@@ -58,4 +75,8 @@ export default function TypedText({
       )}
     </div>
   );
+}
+
+export default function TypedText(props: TypedTextProps) {
+  return <TypedTextContent key={props.text} {...props} />;
 }
