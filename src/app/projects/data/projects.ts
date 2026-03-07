@@ -820,16 +820,13 @@ I learned how to design a clean UE plugin API, keep a Python training loop synch
       {
         label: "View on GitHub",
         url: "https://github.com/kcccr123/figure-aggregator"
+      },
+      {
+        label: "Visit FigureCenter",
+        url: "https://figure-center.netlify.app/"
       }
     ],
     components: [
-      {
-        type: 'demo-link',
-        props: {
-          url: 'https://figure-center.netlify.app/',
-          text: 'View Live Demo'
-        }
-      },
       {
         type: 'tech-stack',
         props: {
