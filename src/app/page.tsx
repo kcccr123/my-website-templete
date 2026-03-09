@@ -15,22 +15,28 @@ export default function Home() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const moreAboutRef = useRef<HTMLDivElement | null>(null);
   const aboutBlurb =
-    "Hi, I’m Kevin. My focus is in backend engineering and distributed systems, but I enjoy working across the stack. I’ve explored everything from web and frontend to machine learning, game development, and cloud out of curiosity, all in the process of becoming a more effective and adaptable engineer.";
+    "Hi, I'm Kevin. My focus is in backend engineering and distributed systems, but I enjoy working across the stack. I've explored everything from web and frontend to machine learning, game development, and cloud out of curiosity, all in the process of becoming a more effective and adaptable engineer.";
 const moreAboutContent = ` 
-I'm a **Computer Science** student currently studying at the **University of Toronto**, pursuing Computer Science and Statistics, and expecting to graduate in December 2026. Originally from **British Columbia**, I became interested in software engineering in high school.
+I'm a **Computer Science and Statistics** student at the **University of Toronto**, graduating in **December 2026**. Originally from **British Columbia**, I became interested in software engineering in high school through a mix of curiosity for computers and wanting to build things.
 
 ## Career In Software
 
-I’m currently studying **Computer Science and Statistics** at the **University of Toronto**, and I’m planning to graduate in **December 2026**. I grew up in **British Columbia**, and I first got into software engineering in high school through a mix of curiosity for computers and wanting to build projects.
+I'm most interested in **backend engineering**, **distributed systems**, and **data platforms**, especially where telemetry, metadata, reliability, and scale all intersect.
 
-Right now, I’m most focused on **backend engineering and distributed systems**. I enjoy problems where reliability matters, where performance has real constraints, and where systems need to hold up under real-world load. I’m moving my career in this direction as I look to find my niche in industry.
+Some of my recent highlights include building manufacturing telemetry infrastructure at **Tesla** and internal data platform services at **Geotab**.
+
+At **Tesla**, I worked on manufacturing data infrastructure, building ingestion pipelines for PLC data and backend systems for real-time production workflows. I designed and built **Escalation Service**, a highly reliable fault-response system for production lines that processed machine and telemetry failures and routed incidents to the right teams. I also built **Signal Explorer**, a data platform application that lets users and services discover PLC signal metadata and query production data more effectively.
+
+At **Geotab**, I worked on the **Data Platform Management Console**, an internal gateway for shared data platform services, and maintained reliable, scalable services on **GCP** with **Kubernetes** and **Terraform**. I led a team of interns to implement scheduled query caching for **Superset**, reducing GCP token bottlenecks during peak usage and improving responsiveness for internal dashboards.
+
+Together, these experiences pushed me toward large-scale telemetry, observability, and metadata systems, and toward building backend infrastructure that makes data platforms reliable and useful in practice.
 
 At the same time, I genuinely enjoy learning across all areas of software engineering. I’ve explored **ML and AI**, **full stack web development**, and **game development**, and I try to carry those lessons back into how I design backend systems. **(Check out my projects page! It’s pretty diverse!)** Exploring different areas has made me more adaptable as an engineer, and it helps me understand how backend code fits into the bigger picture, from product and UX all the way to data, infrastructure, and deployment.
 
 I specifically want to continue improving at **game dev** simply because I enjoy it and the kind of systems-level thinking it encourages. It’s a fun hobby, and I want to see what I can build.
 
 ## A little bit more about me...
-
+ 
 ### Sports
 
 - **Badminton:** I’ve been playing since high school. I haven’t played in a while, but it’s still one of my favorite sports, and I enjoy the occasional session with friends.
