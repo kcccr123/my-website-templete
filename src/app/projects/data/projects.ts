@@ -854,7 +854,7 @@ I learned how to design a clean UE plugin API, keep a Python training loop synch
 
 ## Why
 
-I wanted a single storefront for collectible figures and a project that exercised scraping, storage, and deployment in a full-stack system.
+I wanted a single storefront for collectible figures and a project that exercised scraping, storage, and deployment in a full-stack system. I also wanted to go beyond just building an app locally. I wanted to learn how to deploy and operate a real system in the cloud with automated jobs, managed databases, and container orchestration.
 
 ---
 
@@ -865,11 +865,100 @@ I wanted a single storefront for collectible figures and a project that exercise
 - Cloud SQL Proxy sidecar for secure MySQL connectivity
 - React frontend deployed on Netlify with search and filters
 
+### Cloud
+
+#### System Architecture Overview
+
+The system is split into three independently deployed tiers. The React frontend is hosted on Netlify as a static site and communicates with a REST API over HTTPS. The API itself is an Express server running inside a container on Google Kubernetes Engine (GKE). Behind the API sits a managed MySQL database on Google Cloud SQL, which the API connects to through a proxy sidecar rather than a direct network connection. A separate Kubernetes CronJob handles automated scraping on a schedule, writing fresh product data into the same database.
+
+When a user makes a request, it flows through the following path to reach the application:
+
+> **User Request**
+> → DNS (nip.io → Static IP)
+> → Google Cloud Load Balancer (TLS termination)
+> → Ingress Controller (path-based routing: /figures)
+> → ClusterIP Service (port mapping)
+> → **Pod:** Express API Container → Cloud SQL Proxy Sidecar (localhost)
+> → Google Cloud SQL (MySQL Database)
+
+#### Google Cloud Platform
+
+Everything on the backend runs within a single GCP project. The project hosts a GKE cluster, a Cloud SQL MySQL instance, and a Google Container Registry where Docker images are stored. The application image is based on Node Alpine with system-level Chromium installed directly for Puppeteer (skipping Puppeteer's bundled download to keep the image lean). The Node process runs with the \`--expose-gc\` flag so long-running scraping jobs can trigger manual garbage collection when memory pressure builds up. Images are built, pushed to the registry, and then pulled by Kubernetes workloads in the cluster.
+
+#### Domain Name and Static IP
+
+The cluster is fronted by a reserved static IP address in GCP. Rather than purchasing a custom domain and paying for a managed DNS zone, the system uses nip.io, a free wildcard DNS service that maps any IP-based subdomain back to that IP. This saves on costs while still giving the cluster a stable, resolvable hostname that Google's managed certificate infrastructure can issue an SSL certificate against. A Google-managed SSL certificate is attached to this hostname through a ManagedCertificate custom resource, so HTTPS is enabled with automatic certificate renewal and no manual intervention.
+
+#### Load Balancer and Ingress
+
+A Google Cloud Ingress controller sits behind the static IP and acts as the external entry point to the cluster. It provisions a Google Cloud HTTP(S) Load Balancer automatically. The Ingress uses path-based routing rules to direct traffic to different backend services: requests to \`/figures\` are forwarded to the figure-aggregator service, while requests to \`/receipt-scanner\` are forwarded to a completely separate service that shares the same cluster. This means multiple backend projects can live in the same GKE cluster behind a single load balancer and IP address, keeping infrastructure costs down and routing centralized.
+
+#### Internal Routing
+
+Inside the cluster, a ClusterIP Service sits in front of the API pods. It maps the Service port to the container's internal port, so the Ingress and other cluster resources can route traffic to the API without knowing the actual port the application listens on. The Service uses label selectors to find the correct pods, and Kubernetes handles load distribution across any running replicas. This layer of indirection also means the API container's port can change without updating any external routing. Only the Service spec needs to reflect the new target port.
+
+#### Cloud SQL Proxy Sidecar
+
+Rather than exposing the Cloud SQL database with a public IP or managing SSL certificates manually, the system uses the Cloud SQL Proxy as a sidecar container running alongside the application container in every pod. Because both containers in the same pod share a network namespace, the application connects to the database at localhost. The proxy transparently handles authentication and encrypted tunneling to the actual Cloud SQL instance. Database credentials are stored as Kubernetes Secrets and injected into the pod as environment variables, so nothing sensitive is hardcoded in the application or image.
+
+This same sidecar pattern is also used in the scraping CronJob. The CronJob runs on a schedule, spinning up a pod with a Cloud SQL Proxy container alongside the scraper container. Coordinating their lifecycles is one of the trickier parts. The proxy needs to be running before the scraper can connect, so the scraper waits briefly on startup and retries its database connection. When scraping finishes, the scraper writes a signal file to a shared volume. The proxy watches for that file and shuts itself down, allowing the pod to terminate cleanly. Without this mechanism, the proxy would keep running indefinitely and the Job would never complete. The CronJob is configured to forbid concurrent runs, retry on failure, and retain the last few completed jobs for debugging.
+
+#### Express API and Database
+
+The Express API serves three main endpoints out of the \`/figures\` path: search (with filtering by store, price, and pre-order/pre-owned status), product counts per store, and featured items for the homepage. It runs as a Kubernetes Deployment, with each pod containing both the API container and the Cloud SQL Proxy sidecar described above.
+
+The MySQL database behind it has three main tables: \`products\` for core product identity (name, image, website, URL), \`productprices\` for price history and metadata (price, preowned status, release date, timestamps), and \`featured\` for items highlighted on the homepage. When the scraper inserts data, it uses an upsert pattern. If a product already exists, only the changing fields (like price) are updated, and the row's timestamp is refreshed. Connection pooling is tuned differently depending on the workload. The API server uses a smaller pool for serving queries, while the bulk scraping job uses a larger pool to handle the higher throughput of upserting many products at once. A separate maintenance job keeps the database size stable by deleting the oldest items to offset newly inserted ones.
+
+### Scrapers and Data Ingestion
+
+#### Architecture
+
+Each store has its own scraper module, but they all follow the same pattern: launch a headless Chromium browser via Puppeteer, navigate to the store's product listing pages, extract product data from the DOM using CSS selectors, and return a standardized array of fields: name, image URL, website, product URL, price, pre-owned price, and release date. A shared browser factory configures Chromium with flags optimized for running inside a container: sandboxing is disabled (the container itself provides isolation), GPU acceleration is turned off, and shared memory usage is reduced to avoid crashes in memory-constrained pods.
+
+#### Per-Store Scrapers
+
+Each retailer's site has a different HTML structure, so every scraper defines its own CSS selectors and navigation logic:
+
+- **Solaris Japan** scrapes paginated collection pages and extracts new, pre-order, and pre-owned prices from separate labeled spans. Its featured items scraper goes a step further, navigating into individual product pages to pull full image galleries.
+- **Tokyo Otaku Mode** visits each product page individually rather than scraping from the listing grid, which is slower but captures complete details like release dates.
+- **Animota** is the most complex. It first discovers all available collections from the store's collection index page, then paginates through each collection separately.
+- **Big Bad Toy Store**, **DnD Mini**, and **Super7** follow simpler patterns, scraping paginated listing pages and extracting titles, images, and prices from product cards.
+
+#### Image Handling
+
+Extracting reliable image URLs is surprisingly tricky across different stores. Scrapers check multiple sources in order of preference: the standard \`src\` attribute, lazy-load attributes like \`data-src\` or \`data-lazy-src\`, and \`srcset\` attributes where the highest resolution variant is selected. Protocol-relative URLs (starting with \`//\`) are normalized to HTTPS, and data URIs used as tracking pixels are filtered out. Some stores serve low-resolution thumbnails by default, so scrapers like DnD Mini rewrite image URLs to request higher-resolution variants.
+
+#### Ingestion Flow
+
+The scraping jobs run in two modes. The scheduled CronJob scrapes only the first page of each store, which is enough to capture new arrivals without spending hours on deep pagination. A separate full scrape job (run manually) goes much deeper, crawling many pages per store. Both modes insert data through the same upsert function, which wraps each insert in a transaction with a timeout. If a product already exists, only its price and metadata are updated. The function tracks statistics (new inserts versus updates versus errors) and logs slow operations for debugging. Featured items from select stores are scraped on a lighter schedule and stored in a separate table that powers the homepage carousel.
+
+### Frontend
+
+#### Overview
+
+The frontend is a React single-page application deployed on Netlify. It has two main views: a homepage with featured items and a search results page with advanced filtering. React Router handles client-side navigation, and all data is fetched from the Express API on GKE via Axios.
+
+#### Homepage and Carousel
+
+The homepage fetches featured items from the API and groups them by store. Each store gets its own carousel built with React Slick, where the center slide is displayed prominently at full scale and opacity while neighboring slides are dimmed, scaled down, and slightly blurred to create a depth effect. Featured items can have multiple images, stored as a single string with a custom delimiter and split back into an array on the client for display. Each store section includes a link to browse all items from that retailer.
+
+#### Search and Filtering
+
+The search results page exposes a filter sidebar alongside a product card grid. Users can filter by store (checkboxes that map to a binary string, one bit per store), condition (pre-order or pre-owned), and sort by price ascending or descending. All filter state is stored as URL query parameters, so filtered views are shareable as links. Pagination is configurable with multiple page size options. The UI shows per-store item counts computed from the current result set, giving users a quick sense of inventory distribution.
+
+#### Deployment
+
+The frontend is built with React Scripts and deployed to Netlify with standard configuration. Since it is a static SPA that communicates with the backend purely through API calls, it can be updated and redeployed completely independently of the backend. CORS on the Express API is configured to allow requests from the Netlify domain and localhost for development.
+
 ---
 
 ## What I Learned
 
-I learned how to keep scraped data fresh, how Kubernetes routing and scaling work in practice, and how to separate frontend, API, and data concerns.`,
+The biggest thing this project taught me is exactly how a user's request reaches my code. Before this, "deploying to the cloud" was an abstract concept. Now I can trace the full path. A request starts at the browser, which resolves the nip.io hostname to my reserved static IP. That IP belongs to a Google Cloud HTTP(S) Load Balancer, which terminates TLS using the Google-managed certificate. The load balancer then evaluates the Ingress path rules. Seeing \`/figures\` in the URL, it forwards the request to the ClusterIP Service associated with the figure-aggregator backend. The Service uses label selectors to find the matching pod and directs the request to the application container. At that point my Express route handler finally picks it up. Understanding each hop in that chain (DNS resolution, TLS termination, Ingress routing, Service selection, and container port mapping) made the whole Kubernetes networking model click for me.
+
+I also gained a much better understanding of how multi-container pods work by debugging the CronJob sidecar lifecycle. The Cloud SQL Proxy has to be running before the scraper can connect to the database, and it has to shut down after the scraper finishes or the Job never completes. Solving that with a shared-volume signal file taught me that containers in the same pod share network and storage, but not process lifecycles. Coordinating them is your responsibility.
+
+Beyond networking and pod internals, I learned the value of managed cloud services. Using Cloud SQL with the proxy sidecar meant I never had to worry about database backups, patching, or network security rules. The Google-managed SSL certificate on the Ingress eliminated certificate renewal as a concern entirely. These managed pieces let me focus on the application logic instead of operational overhead.`,
           title: 'About Figure Aggregator'
         }
       }
